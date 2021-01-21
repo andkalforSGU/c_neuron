@@ -1,61 +1,108 @@
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 typedef struct {
-    int dimension;
+    int size;
     float* weight;
     float (*normalizeFunc)(float);
     float (*adderFunc)(float*, float*, int);
 } neuron;
 
-neuron createNeu(int dimension, float (*normalizeFunc)(float), float (*adderFunc)(float*, float*, int));
-float unitJump(float x);
-float adderfunc(float* weight, float* features, int dimension);
+typedef struct {
+    int a;
+    int b;
+    neuron* layer;
+    neuron** layers;
+} net;
 
-//--------------------POINTERS_TO_FUNCTIONS------------------
+float sigmoid(float x);
+float NET(float* weigth, float* feaches, int size);
+float useNeu(neuron N, float* features);
+float useNet(net Net, float* features);
 
-float (*sigm_pointer)(float);
-float (*add_pointer)(float*, float*, int);
+neuron createNeu(
+    int size, float (*normalizeFunc)(float), 
+    float (*adderFunc)(float*, float*, int)
+);
 
-//-----------------------------------------------------------
+net createNet(neuron N, int a, int b);
+
+//----------------POINTERS_OF_FUNCTIONS---------------
+
+float (*normilizeFunc)(float);
+float (*adderFunc)(float*, float*, int);
+
+//----------------------------------------------------
 
 int main(int argc, char* argv[]) {
-    int dimension = 10;
-    sigm_pointer = &unitJump;
-    add_pointer = &adderfunc;
+    int size = 3;
+    float features[] = {1.0, 1.0, 1.0};
+    
+    normilizeFunc = &sigmoid;
+    adderFunc = &NET;
 
-    neuron N;
-    N = createNeu(dimension, sigm_pointer, add_pointer);
+    neuron N = createNeu(size, normilizeFunc, NET);
+    net Net = createNet(N, 3, 3);
 
-    for (int i = 0; i < dimension; i++) {
-        printf("%f\n", N.weight[i]);
-    }
+    printf("%f\n", Net.layers[0][0].weight[0]);
+
+    return 0;
 }
 
-//-----------------------------------------------------------
+//----------------------------------------------------
 
-neuron createNeu(int dimension, float (*normalizeFunc)(float), float (*adderFunc)(float*, float*, int)) {
-    float* weight = (float*)malloc(dimension*sizeof(float));
-    for (int i = 0; i < dimension; i++){
+float sigmoid(float x) {
+    if (x > 0.5) {
+        return 1.0;
+    } else return 0.0;
+}
+
+float NET(float* weigth, float* feaches, int size) {
+    float net = 0;
+    
+    for (int i = 0; i < size; i++) {
+        net += weigth[i] * feaches[i];
+    }
+
+    printf("%f\n", net);
+    return net;
+}
+
+neuron createNeu(
+    int size, float (*normalizeFunc)(float), 
+    float (*adderFunc)(float*, float*, int)
+) {
+    float* weight = (float*)malloc(size*sizeof(float));
+    for (int i = 0; i < size; i++) {
         weight[i] = ((float)(rand()%10))/10;
     }
-    neuron N = {dimension, weight, normalizeFunc, adderFunc};
+
+    neuron N = {size, weight, normalizeFunc, adderFunc};
     return N;
 }
 
-float unitJump(float x) {
-    if (x > 0.5) {
-        return 1;
-    } else return 0;
+float useNeu(neuron N, float* features) {
+    float net = N.adderFunc(N.weight, features, N.size);
+    printf("%f\n", net);
+
+    return(N.normalizeFunc(net));
 }
 
-float adderfunc(float* weight, float* features, int dimension) {
-    float net = 0;
-
-    for (int i = 0; i < dimension; i++) {
-        net += weight[i] * features[i];
+net createNet(neuron N, int a, int b) {
+    neuron* layer = (neuron*)malloc(a*sizeof(neuron));
+    neuron** layers = (neuron**)malloc(b*sizeof(neuron*));
+    for (int i = 0; i < a; i++) {
+        layer[i] = N;
+    }
+    for (int i = 0; i < b; i++) {
+        layers[i] = layer;
     }
 
-    return net;
+    net Net = {a, b, layer, layers};
+    return Net;
+}
+
+float useNet(net Net, float* features) {
+    
 }
